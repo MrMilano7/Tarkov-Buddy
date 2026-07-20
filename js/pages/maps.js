@@ -15,6 +15,9 @@ export { HIDDEN_VARIANTS };
 import { getProfile, update } from "../core/store.js";
 import { mapScores, mapPlan, orderRoute } from "../core/routeEngine.js";
 import { hasCalibration, getImageInfo, gameToPixel } from "../core/mapCalibration.js";
+import { KNOWN_MAP_PAGES, fetchReferenceMap, storedReferenceManifest, REF_PREFIX } from "../core/mapFetch.js";
+import { kv } from "../core/db.js";
+import { toast } from "../ui/dom.js";
 
 function lockToggle(m, profile, rerender) {
   const locked = (profile.lockedMaps ?? []).includes(m.id);
@@ -51,14 +54,35 @@ let refRedraw = null;     // ALWAYS the latest render's redraw. The router can
                           // re-render (e.g. on data:ready) between fetch start
                           // and finish; notifying the first caller's draw would
                           // repaint a detached container — the v0.8.13 bug.
+/**
+ * v0.9.9: two independent sources, merged. File-based (assets/maps/
+ * reference.json, from the Termux register_maps.py path) and
+ * browser-fetched (kv store, from the "Fetch reference map" button below —
+ * see core/mapFetch.js). A map present in both keeps whichever the file
+ * manifest doesn't have; browser entries never overwrite a file entry
+ * since the file path is still the higher-fidelity, curator-reviewed one.
+ */
 function loadReference(onReady) {
   refRedraw = onReady;
   if (refManifest !== null) return;
   refManifest = false;
-  fetch("assets/maps/reference.json", { cache: "no-store" })
-    .then((r) => (r.ok ? r.json() : null))
-    .then((j) => { if (j?.maps) { refManifest = j; refRedraw?.(); } })
-    .catch(() => {});
+  Promise.all([
+    fetch("assets/maps/reference.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    storedReferenceManifest().catch(() => null),
+  ]).then(([fileJ, kvJ]) => {
+    const fileMaps = fileJ?.maps ?? {};
+    const kvMaps = kvJ?.maps ?? {};
+    const merged = { ...kvMaps, ...fileMaps }; // file wins on id collision
+    const kvIds = new Set(Object.keys(kvMaps).filter((id) => !fileMaps[id]));
+    Promise.all([...kvIds].map((id) => kv.get(REF_PREFIX + id).then((dataUrl) => [id, dataUrl]).catch(() => [id, null])))
+      .then((pairs) => {
+        const dataUrls = new Map(pairs.filter(([, v]) => v));
+        refManifest = Object.keys(merged).length
+          ? { attribution: fileJ?.attribution ?? kvJ?.attribution, maps: merged, kvIds, dataUrls }
+          : { attribution: null, maps: {}, kvIds: new Set(), dataUrls: new Map() };
+        refRedraw?.();
+      });
+  });
 }
 
 function attributionLine(attr) {
@@ -72,18 +96,58 @@ function attributionLine(attr) {
       attr?.license || "CC BY-NC-SA 4.0"));
 }
 
-const refOpen = new Set(); // mapIds with the viewer expanded
+const refOpen = new Set();    // mapIds with the viewer expanded
+const fetchBusy = new Set();  // mapIds currently fetching (button state)
+const fetchLog = new Map();   // mapId -> last status/error line
+
 function referenceViewer(m, rerender) {
-  if (!refManifest || !refManifest.maps?.[m.id]) return null;
-  const entry = refManifest.maps[m.id];
-  const src = `assets/maps/${entry.file}`;
+  if (!refManifest) return null;
+  const entry = refManifest.maps?.[m.id];
+  const isKvEntry = refManifest.kvIds?.has(m.id) && entry;
+
+  if (!entry) {
+    // v0.9.9: nothing on file — offer a one-click browser fetch if this
+    // map's RE3MR page is known. Each visitor's own browser does the
+    // fetching and storing; nothing is redistributed by this app or repo.
+    if (!KNOWN_MAP_PAGES[m.id]) return null;
+    const busy = fetchBusy.has(m.id);
+    const err = fetchLog.get(m.id);
+    return el("div", { style: "margin-top:8px" },
+      el("button", { class: "btn btn--ghost", style: "font-size:12px", disabled: busy ? "" : null,
+        onclick: async () => {
+          fetchBusy.add(m.id); fetchLog.delete(m.id); rerender();
+          try {
+            await fetchReferenceMap(m.id, (line) => { fetchLog.set(m.id, line); rerender(); });
+            toast(`${m.name} reference map downloaded to this browser.`);
+          } catch (e) {
+            fetchLog.set(m.id, e.message);
+            toast(`Couldn't fetch the ${m.name} map: ${e.message}`, { error: true });
+          } finally {
+            fetchBusy.delete(m.id); rerender();
+          }
+        } }, busy ? "Fetching…" : "Fetch reference map"),
+      el("div", { style: "font-size:11px;color:var(--text-muted);margin-top:4px" },
+        `Downloads the ${m.name} 3D map from RE3MR straight into this browser (not this app or its repo — see the note below).`),
+      err ? el("div", { style: "font-size:11px;color:var(--alert, #c66);margin-top:4px" }, err) : null);
+  }
+
+  const src = isKvEntry ? refManifest.dataUrls?.get(m.id) : `assets/maps/${entry.file}`;
   const open = refOpen.has(m.id);
+  const sizeLabel = entry.sizeMB != null ? ` (${entry.sizeMB} MB)` : "";
   const toggle = el("button", {
     class: "btn btn--ghost", style: "margin-top:8px;font-size:12px",
     onclick: () => { open ? refOpen.delete(m.id) : refOpen.add(m.id); rerender(); },
-  }, open ? "Hide map" : `View map (${entry.sizeMB} MB)`);
-  if (!open) return el("div", {}, toggle);
-  return el("div", {}, toggle,
+  }, open ? "Hide map" : `View map${sizeLabel}`);
+  const removeBtn = !isKvEntry ? null : el("button", {
+    class: "btn btn--ghost", style: "margin-top:8px;margin-left:8px;font-size:12px;color:var(--text-muted)",
+    onclick: async () => {
+      const { deleteReferenceMap } = await import("../core/mapFetch.js");
+      await deleteReferenceMap(m.id);
+      refManifest = null; // force reload next loadReference() call
+      rerender();
+    } }, "Remove");
+  if (!open) return el("div", {}, toggle, removeBtn);
+  return el("div", {}, toggle, removeBtn,
     el("a", { href: src, target: "_blank", rel: "noopener",
       title: "Open full size in a new tab for pinch-zoom" },
       el("img", { src, loading: "lazy", alt: `${m.name} reference map`,
