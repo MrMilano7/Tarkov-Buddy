@@ -1,0 +1,15 @@
+# Personal game-data JSON pulled by tools/update_data.py and friends.
+# Never committed: it's per-player, regenerated on demand, and large.
+data/
+
+# RE3MR community map renders (reemr.se), CC BY-NC-SA 4.0 — the license's
+# NonCommercial clause means these must never be redistributed via this
+# repo. Each user fetches their own copy via tools/register_maps.py.
+assets/maps/reference/
+assets/maps/reference.json
+
+# Local scratch / OS noise
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/

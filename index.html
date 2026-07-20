@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#131410" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Tarkov Buddy</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23131410'/%3E%3Crect x='3' y='3' width='26' height='26' fill='none' stroke='%23b8975a' stroke-width='2'/%3E%3Ctext x='16' y='21' font-family='sans-serif' font-size='12' font-weight='bold' fill='%23b8975a' text-anchor='middle'%3ETB%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+
+    <!-- ===== Sidebar navigation ===== -->
+    <nav id="sidebar" class="sidebar" aria-label="Main navigation">
+      <div class="sidebar__brand">
+        <div class="sidebar__title">
+          <span class="sidebar__name">TARKOV</span>
+          <span class="sidebar__sub">BUDDY</span>
+        </div>
+      </div>
+      <ul id="nav-list" class="nav" role="list"></ul>
+      <div class="sidebar__footer">
+        <span id="app-version" class="sidebar__version"></span>
+      </div>
+    </nav>
+
+    <!-- ===== Main column ===== -->
+    <div class="main">
+      <header class="topbar">
+        <button id="menu-toggle" class="topbar__menu" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+        <h1 id="page-title" class="topbar__title">Dashboard</h1>
+        <button id="search-open" class="topbar__search" aria-label="Open search (Ctrl+K)">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path fill="currentColor" d="M10 2a8 8 0 1 0 4.9 14.3l5.4 5.4 1.4-1.4-5.4-5.4A8 8 0 0 0 10 2zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12z"/>
+          </svg>
+          <span class="topbar__search-label">Search</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+      </header>
+
+      <main id="view" class="view" tabindex="-1"></main>
+
+      <footer id="status-bar" class="statusbar" aria-live="polite">
+        <span id="status-profile" class="statusbar__item"></span>
+        <span id="status-data" class="statusbar__item"></span>
+        <span id="status-save" class="statusbar__item statusbar__item--right"></span>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ===== Global search overlay ===== -->
+  <div id="search-overlay" class="search" hidden>
+    <div class="search__backdrop" data-search-close></div>
+    <div class="search__panel" role="dialog" aria-modal="true" aria-label="Search">
+      <input id="search-input" class="search__input" type="text"
+             placeholder="Search quests, traders, maps, items…"
+             autocomplete="off" spellcheck="false" />
+      <ul id="search-results" class="search__results" role="listbox"></ul>
+      <div class="search__hint">↑↓ navigate · Enter open · Esc close</div>
+    </div>
+  </div>
+
+  <div id="toast-root" class="toasts" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

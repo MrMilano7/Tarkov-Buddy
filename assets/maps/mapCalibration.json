@@ -1,0 +1,162 @@
+{
+  "_comment": "Per-map image calibration for the Route Optimizer visual overlay. Hand-maintained, not importer-generated -- depends on a user-supplied map image the importer has no way to fetch or license. Each map's transform is a 2D affine fit (least-squares over refPoints) mapping real game (x,z) coordinates to pixel coordinates on image. Add a new map by supplying an image + at least 3 refPoints (named extracts are easiest since their real coordinates are already in maps.json) and refitting.",
+  "maps": {
+    "customs": {
+      "image": "assets/maps/customs.jpg",
+      "imageWidth": 3840,
+      "imageHeight": 2160,
+      "refPoints": [
+        {
+          "name": "Crossroads",
+          "gx": -335,
+          "gz": -88,
+          "px": 3732.0,
+          "py": 698.3
+        },
+        {
+          "name": "RUAF Roadblock",
+          "gx": -10,
+          "gz": -138,
+          "px": 2612.0,
+          "py": 567.3
+        },
+        {
+          "name": "ZB-1011",
+          "gx": 621,
+          "gz": -129,
+          "px": 377.0,
+          "py": 747.0
+        },
+        {
+          "name": "Old Gas Station",
+          "gx": 309,
+          "gz": -174,
+          "px": 1493.0,
+          "py": 573.0
+        },
+        {
+          "name": "Admin Gate",
+          "gx": 671,
+          "gz": -55,
+          "px": 242.0,
+          "py": 979.3
+        },
+        {
+          "name": "Scav Checkpoint",
+          "gx": 652,
+          "gz": -27,
+          "px": 300.0,
+          "py": 1050.3
+        },
+        {
+          "name": "Factory Far Corner",
+          "gx": 652,
+          "gz": -160,
+          "px": 331.3,
+          "py": 688.3
+        },
+        {
+          "name": "Military Base CP",
+          "gx": 645,
+          "gz": 127,
+          "px": 267.3,
+          "py": 1615.3
+        },
+        {
+          "name": "Sniper Roadblock",
+          "gx": 15,
+          "gz": 126,
+          "px": 2686.0,
+          "py": 1350.7
+        },
+        {
+          "name": "Passage Between Rocks",
+          "gx": 539,
+          "gz": 200,
+          "px": 678.7,
+          "py": 1708.3
+        },
+        {
+          "name": "Railroad to Military Base",
+          "gx": 489,
+          "gz": 221,
+          "px": 877.3,
+          "py": 1749.0
+        },
+        {
+          "name": "Dorms V-Ex",
+          "gx": 181,
+          "gz": 213,
+          "px": 2088.7,
+          "py": 1676.7
+        },
+        {
+          "name": "Old Road Gate",
+          "gx": 182,
+          "gz": 214,
+          "px": 2080.7,
+          "py": 1678.7
+        },
+        {
+          "name": "Warehouse 4",
+          "gx": 342,
+          "gz": -26,
+          "px": 1422.3,
+          "py": 981.3
+        },
+        {
+          "name": "Warehouse 17",
+          "gx": 51,
+          "gz": -70,
+          "px": 2464.3,
+          "py": 747.0
+        },
+        {
+          "name": "ZB-1013",
+          "gx": 201,
+          "gz": -153,
+          "px": 1902.7,
+          "py": 570.3
+        },
+        {
+          "name": "Railroad to Tarkov",
+          "gx": -163,
+          "gz": -217,
+          "px": 3036.0,
+          "py": 379.7
+        },
+        {
+          "name": "Trailer Park",
+          "gx": -314,
+          "gz": -233,
+          "px": 3545.0,
+          "py": 342.3
+        },
+        {
+          "name": "Trailer Park Workers Shack",
+          "gx": -249,
+          "gz": -233,
+          "px": 3338.0,
+          "py": 341.7
+        },
+        {
+          "name": "Railroad to Port",
+          "gx": -149,
+          "gz": 47,
+          "px": 3212.3,
+          "py": 1069.7
+        }
+      ],
+      "transform": {
+        "m11": -3.5197387831327953,
+        "m12": 0.3384518799748051,
+        "m21": 0.20210070249184797,
+        "m22": 2.889060699369293,
+        "tx": 2605.745486217551,
+        "ty": 1012.1266323180128
+      },
+      "maxResidualPx": 153.56202322412807,
+      "_refPointsNote": "Image and refPoints are both in this map's native 3840x2160 resolution (flattened from the re3mr.com source PSD), so px/py need no scaling."
+    }
+  }
+}
