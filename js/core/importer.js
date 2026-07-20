@@ -130,6 +130,26 @@ const ACCESS_QUERY = `
 const ACHIEVEMENTS_QUERY = `
 { achievements { id name description hidden side rarity playersCompletedPercent } }`;
 
+// v0.9.12: prestige levels. Risky new fields (transferSettings is a union
+// added recently), so it gets its own ladder per house rules.
+const PRESTIGE_QUERIES = [
+  `{ prestige {
+    id name prestigeLevel imageLink
+    conditions { id type description }
+    rewards {
+      items { item { id name } count }
+      skillLevelReward { name level }
+      customization { id name }
+    }
+    transferSettings {
+      ... on PrestigeTransferSettingsStash { gridWidth gridHeight }
+      ... on PrestigeTransferSettingsSkill { name skillType transferRate }
+    }
+  } }`,
+  `{ prestige { id name prestigeLevel conditions { id type description } } }`,
+  `{ prestige { id name prestigeLevel } }`,
+];
+
 const TRADER_REQ_QUERIES = [
   `{ tasks { id traderRequirements { trader { normalizedName } requirementType compareMethod value } } }`,
   `{ tasks { id traderRequirements { trader { normalizedName } level } } }`,
@@ -244,6 +264,33 @@ export function parseAchievements(achievements) {
     rarity: a.rarity ?? "Common",
     completedPct: a.playersCompletedPercent ?? null,
   }));
+}
+
+export function parsePrestige(prestige) {
+  return (prestige ?? [])
+    .map((p) => ({
+      id: p.id,
+      name: p.name ?? `Prestige ${p.prestigeLevel ?? "?"}`,
+      level: p.prestigeLevel ?? 0,
+      imageLink: p.imageLink ?? null,
+      conditions: (p.conditions ?? []).filter(Boolean).map((c) => ({
+        id: c.id, type: c.type ?? "", description: c.description ?? "",
+      })),
+      rewards: {
+        items: (p.rewards?.items ?? []).filter((r) => r.item)
+          .map((r) => ({ item: r.item.id, name: r.item.name, count: r.count || 1 })),
+        skills: (p.rewards?.skillLevelReward ?? [])
+          .map((s) => ({ name: s.name ?? "?", level: s.level ?? 0 })),
+        customization: (p.rewards?.customization ?? []).filter(Boolean)
+          .map((c) => ({ id: c.id, name: c.name ?? "?" })),
+      },
+      // union: stash entries have gridWidth, skill entries have transferRate
+      transfer: (p.transferSettings ?? []).filter(Boolean).map((t) =>
+        t.gridWidth != null
+          ? { kind: "stash", gridWidth: t.gridWidth, gridHeight: t.gridHeight ?? null }
+          : { kind: "skill", name: t.name ?? "?", skillType: t.skillType ?? "", rate: t.transferRate ?? null }),
+    }))
+    .sort((a, b) => a.level - b.level);
 }
 
 export function parseMapAccess(mapsData) {
@@ -520,6 +567,10 @@ export async function runImport(onProgress = () => {}) {
   const traderReqs = reqRaw ? parseTraderReqs(reqRaw.tasks) : {};
   if (reqRaw) log(`trader standing requirements: ${Object.keys(traderReqs).length} quests gated`);
 
+  const prRaw = await ladder(PRESTIGE_QUERIES, log, "prestige");
+  const prestige = prRaw ? parsePrestige(prRaw.prestige) : [];
+  if (prRaw) log(`prestige data: ${prestige.length} levels`);
+
   const outputs = {
     quests: transformQuests(data.tasks, geo, traderReqs),
     traders: transformTraders(data.traders),
@@ -530,6 +581,7 @@ export async function runImport(onProgress = () => {}) {
     crafts: transformCrafts(data.crafts ?? []),
     barters: transformBarters(data.barters ?? []),
     achievements: { achievements },
+    prestige: { note: `Imported from tarkov.dev on ${todayISO()}.`, prestige },
   };
 
   for (const [id, content] of Object.entries(outputs)) {

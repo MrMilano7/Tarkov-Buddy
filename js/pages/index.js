@@ -21,6 +21,7 @@ import keys from "./keys.js";
 import flea from "./flea.js";
 import planner from "./planner.js";
 import achievements from "./achievements.js";
+import prestige from "./prestige.js";
 import storyline from "./storyline.js";
 
 /** Ordered list consumed by app.js. Order = sidebar order. */
@@ -32,6 +33,7 @@ export const allPages = [
   storyline,
   quests,
   achievements,
+  prestige,
   loot,
   inventory,
   keys,

@@ -349,6 +349,83 @@ def fetch_achievements():
         return []
 
 
+# v0.9.12: prestige levels. New-ish fields (transferSettings union), so a
+# fallback ladder like every other risky side query.
+PRESTIGE_QUERIES = [
+    """{ prestige {
+      id name prestigeLevel imageLink
+      conditions { id type description }
+      rewards {
+        items { item { id name } count }
+        skillLevelReward { name level }
+        customization { id name }
+      }
+      transferSettings {
+        ... on PrestigeTransferSettingsStash { gridWidth gridHeight }
+        ... on PrestigeTransferSettingsSkill { name skillType transferRate }
+      }
+    } }""",
+    """{ prestige { id name prestigeLevel conditions { id type description } } }""",
+    """{ prestige { id name prestigeLevel } }""",
+]
+
+
+def _parse_prestige(prestige):
+    out = []
+    for p in prestige or []:
+        rewards = p.get("rewards") or {}
+        out.append({
+            "id": p["id"],
+            "name": p.get("name") or f"Prestige {p.get('prestigeLevel', '?')}",
+            "level": p.get("prestigeLevel") or 0,
+            "imageLink": p.get("imageLink"),
+            "conditions": [{
+                "id": c.get("id"), "type": c.get("type") or "",
+                "description": c.get("description") or "",
+            } for c in (p.get("conditions") or []) if c],
+            "rewards": {
+                "items": [{"item": r["item"]["id"], "name": r["item"]["name"],
+                           "count": r.get("count") or 1}
+                          for r in (rewards.get("items") or []) if r.get("item")],
+                "skills": [{"name": s.get("name") or "?", "level": s.get("level") or 0}
+                           for s in (rewards.get("skillLevelReward") or [])],
+                "customization": [{"id": c["id"], "name": c.get("name") or "?"}
+                                  for c in (rewards.get("customization") or []) if c],
+            },
+            "transfer": [
+                ({"kind": "stash", "gridWidth": t["gridWidth"],
+                  "gridHeight": t.get("gridHeight")}
+                 if t.get("gridWidth") is not None else
+                 {"kind": "skill", "name": t.get("name") or "?",
+                  "skillType": t.get("skillType") or "",
+                  "rate": t.get("transferRate")})
+                for t in (p.get("transferSettings") or []) if t],
+        })
+    out.sort(key=lambda x: x["level"])
+    return out
+
+
+def fetch_prestige():
+    """Return the parsed prestige level list or [] — never blocks the core."""
+    for query in PRESTIGE_QUERIES:
+        try:
+            body = json.dumps({"query": query}).encode()
+            req = urllib.request.Request(
+                API, data=body,
+                headers={"Content-Type": "application/json",
+                         "User-Agent": "tarkov-companion-importer/1.0"})
+            with urllib.request.urlopen(req, timeout=120) as res:
+                payload = json.load(res)
+            if "errors" in payload:
+                print(f"  prestige query rejected ({payload['errors'][0].get('message', '?')[:80]}), trying simpler form...")
+                continue
+            return _parse_prestige(payload["data"]["prestige"])
+        except Exception as e:  # noqa: BLE001
+            print(f"  prestige fetch failed ({e}), trying simpler form...")
+    print("  no prestige data available")
+    return []
+
+
 def fetch_map_access():
     """Return {mapId: {minLevel, maxLevel, accessKeys, accessKeysMinLevel}}
     or {} on any failure — core map import must never depend on this."""
@@ -714,11 +791,12 @@ def main():
     transits = fetch_transits()
     map_access = fetch_map_access()
     achievements = fetch_achievements()
+    prestige = fetch_prestige()
     trader_reqs = fetch_trader_reqs()
 
     backup = data_dir / "backup"
     backup.mkdir(exist_ok=True)
-    for name in ("quests.json", "items.json", "traders.json", "maps.json", "hideout.json", "ammo.json", "crafts.json", "barters.json", "achievements.json", "storyline.json", "storyGates.json", "manifest.json"):
+    for name in ("quests.json", "items.json", "traders.json", "maps.json", "hideout.json", "ammo.json", "crafts.json", "barters.json", "achievements.json", "prestige.json", "storyline.json", "storyGates.json", "manifest.json"):
         src = data_dir / name
         if src.exists():
             shutil.copy2(src, backup / name)
@@ -733,6 +811,7 @@ def main():
         "crafts.json": transform_crafts(data.get("crafts") or []),
         "barters.json": transform_barters(data.get("barters") or []),
         "achievements.json": {"achievements": achievements},
+        "prestige.json": {"note": f"Imported from tarkov.dev on {date.today().isoformat()}.", "prestige": prestige},
     }
     for name, content in outputs.items():
         (data_dir / name).write_text(json.dumps(content, indent=1, ensure_ascii=False))

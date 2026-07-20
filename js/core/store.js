@@ -38,6 +38,8 @@ function defaultProfile() {
     keysOwned: [],             // item ids
     traderRep: {},             // traderId -> standing (manual, v0.8.27; Fence rep for rep-gated quests)
     achievementsEarned: [],    // achievement ids ticked by the player (v0.8.19)
+    prestigeTicked: [],        // prestige condition ids ticked by the player (v0.9.12)
+    prestigeAttained: 0,       // highest prestige level the player has claimed (v0.9.12)
     storylineProgress: {},     // chapterId -> [objective indexes done] (v0.8.21)
     stash: [],                 // inventory records
     inventory: {},             // itemId -> have count (manual, v0.5)
