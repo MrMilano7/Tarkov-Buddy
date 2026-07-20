@@ -7,7 +7,7 @@
  * the entire app and data. The cache name embeds the version: deploying a
  * new version drops all old caches on activate.
  */
-const VERSION = "0.9.10";
+const VERSION = "0.9.11";
 const CACHE = `tarkov-companion-${VERSION}`;
 
 self.addEventListener("install", () => {

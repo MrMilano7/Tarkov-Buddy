@@ -44,6 +44,41 @@ export const KNOWN_MAP_IMAGES = {
     mobile: "https://reemr.se/wp-content/uploads/2024/07/re3mrStreetsofTarkovMobile.jpg",
     full: "https://reemr.se/maps/Streets/re3mrStreetsofTarkov.png",
   },
+  factory: {
+    mobile: "https://www.re3mr.com/maps/Factory/FactorybyRe3mrmobile.jpg",
+    full: "https://www.re3mr.com/maps/Factory/FactorybyRe3mr.png",
+  },
+  "ground-zero": {
+    mobile: "https://www.re3mr.com/maps/Groundzero/GroundZeroMobile.png",
+    full: "https://www.re3mr.com/maps/Groundzero/GroundZero.png",
+  },
+  lighthouse: {
+    // RE3MR ships this map as two orientations with no single "primary" —
+    // vertical is the more commonly linked one, used here as the default.
+    mobile: "https://reemr.se/maps/Lighthouse/re3mrLighthouseVERTMobile.jpg",
+    full: "https://reemr.se/maps/Lighthouse/re3mrLighthouseVERT.png",
+  },
+  shoreline: {
+    mobile: "https://reemr.se/maps/Shoreline/re3mrShoreline2Mobile.jpg",
+    full: "https://reemr.se/maps/Shoreline/re3mrShoreline2.png",
+  },
+  labyrinth: {
+    mobile: "https://www.re3mr.com/maps/Labyrinth/re3mrLabyrinthMobilePNG.png",
+    full: "https://www.re3mr.com/maps/Labyrinth/re3mrLabyrinthPNG.png",
+  },
+  icebreaker: {
+    mobile: "https://reemr.se/maps/Icebreaker/re3mrIcebreakerMobile.jpg",
+    full: "https://reemr.se/maps/Icebreaker/re3mrIcebreaker.png",
+  },
+  terminal: {
+    // RE3MR's Terminal page has no true 3D render yet ("Not available yet"
+    // at time of writing) — this is their 2D wiki-style map instead.
+    mobile: "https://reemr.se/maps/Terminal/WikiTerminalMapMobile.jpg",
+    full: "https://reemr.se/maps/Terminal/WikiTerminalMap.jpg",
+  },
+  // labs: intentionally absent — RE3MR has no Lab map at all (not in
+  // their own nav). Nothing to hotlink; the Maps card just shows no
+  // "View map" section for it, same as any other unmapped id.
 };
 
 export const ATTRIBUTION = {

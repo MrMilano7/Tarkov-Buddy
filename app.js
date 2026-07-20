@@ -16,7 +16,7 @@ import { on } from "./js/core/events.js";
 import { toast } from "./js/ui/dom.js";
 import { allPages } from "./js/pages/index.js";
 
-const APP_VERSION = "0.9.10";
+const APP_VERSION = "0.9.11";
 
 /* ---------- status bar ---------- */
 function initStatusBar() {
